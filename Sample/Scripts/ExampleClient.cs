@@ -6,6 +6,7 @@ namespace LANServiceDiscovery.Sample
 {
     /// <summary>
     /// 客户端示例：发现 IP 后打印日志，超时时自动重试。
+    /// 默认 OnDataReceived 处理 DiscoveryReply，如需扩展自定义命令码可 override。
     /// </summary>
     public class ExampleClient : UdpDiscoveryClientBase
     {
@@ -22,10 +23,7 @@ namespace LANServiceDiscovery.Sample
 
         public ExampleClient() : base(8888, 3f) { }
 
-        public void Start()
-        {
-            Task.Run(StartDiscoveryAsync);
-        }
+        public void Start() => Task.Run(StartDiscoveryAsync);
 
         protected override void OnHostDiscovered(string ip)
         {
@@ -33,10 +31,19 @@ namespace LANServiceDiscovery.Sample
             Debug.Log($"发现服务端: {ip}");
         }
 
-        /// <summary>
-        /// 超时时由基类在 while 循环内 await，返回 true 继续循环，false 退出。
-        /// </summary>
-        protected override async Task<bool> OnDiscoveryTimeout()
+        // 扩展示例：重写 OnDataReceived 处理自定义命令码
+        // protected override Task<bool> OnDataReceived()
+        // {
+        //     if (Reader.Cmd == (byte)MyOpcode.CustomReply)
+        //     {
+        //         string data = Reader.ReadRemainingString();
+        //         Debug.Log($"收到自定义回复: {data}");
+        //         return Task.FromResult(true);
+        //     }
+        //     return base.OnDataReceived();
+        // }
+
+        protected override async Task<bool> OnDiscoveryTimeout(System.Threading.CancellationToken token)
         {
             _retryCount++;
 
@@ -47,7 +54,7 @@ namespace LANServiceDiscovery.Sample
             }
 
             Debug.LogWarning($"未收到服务端回复，即将重试... ({_retryCount}/{(maxRetries > 0 ? maxRetries.ToString() : "∞")})");
-            await Task.Delay((int)(retryInterval * 1000));
+            await Task.Delay((int)(retryInterval * 1000), token);
             return true;
         }
 
@@ -56,9 +63,6 @@ namespace LANServiceDiscovery.Sample
             Debug.LogError($"异常: {ex.Message}");
         }
 
-        public void Destroy()
-        {
-            Dispose();
-        }
+        public void Destroy() => Dispose();
     }
 }

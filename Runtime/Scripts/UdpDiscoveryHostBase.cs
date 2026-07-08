@@ -1,20 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
-
 
 namespace LANServiceDiscovery.Runtime
 {
-   
-
     /// <summary>
-    /// UDP 发现服务端抽象基类。
-    /// 子类需实现 OnDiscoveryRequest，用于自定义回复内容（例如返回本机 IP）。
+    /// UDP 发现服务端抽象基类。默认处理 <see cref="DiscoveryOpcode.DiscoveryRequest"/>。
+    /// 子类重写 <see cref="OnDataReceived"/> 扩展自定义命令码，
+    /// 可通过 <see cref="Reader"/> / <see cref="Writer"/> 的 setter 替换实现。
     /// </summary>
     public abstract class UdpDiscoveryHostBase : IDisposable
     {
@@ -23,18 +19,28 @@ namespace LANServiceDiscovery.Runtime
         private Task _listenTask;
         private readonly int _listenPort;
 
-        /// <summary>
-        /// 构造服务端
-        /// </summary>
-        /// <param name="listenPort">监听的 UDP 端口</param>
+        private IReader _reader;
+        private IWriter _writer;
+
+        protected virtual IReader Reader
+        {
+            get { _reader ??= new PacketReader(); return _reader; }
+            set => _reader = value;
+        }
+
+        protected virtual IWriter Writer
+        {
+            get { _writer ??= new PacketWriter(); return _writer; }
+            set => _writer = value;
+        }
+
+        protected IPEndPoint RemoteEndPoint { get; private set; }
+
         protected UdpDiscoveryHostBase(int listenPort)
         {
             _listenPort = listenPort;
         }
 
-        /// <summary>
-        /// 启动 UDP 监听服务
-        /// </summary>
         protected void StartSync()
         {
             if (_listenTask != null && !_listenTask.IsCompleted) return;
@@ -47,9 +53,6 @@ namespace LANServiceDiscovery.Runtime
             OnListenStarted(_listenPort);
         }
 
-        /// <summary>
-        /// 停止监听
-        /// </summary>
         protected void Stop()
         {
             _cts?.Cancel();
@@ -64,74 +67,67 @@ namespace LANServiceDiscovery.Runtime
                 while (!token.IsCancellationRequested)
                 {
                     var result = await _udpServer.ReceiveAsync();
-                    
                     OnRawDataReceived(result.RemoteEndPoint, result.Buffer.Length);
-                    // 解析请求
+
                     var decoder = new PacketCodec.Decoder();
-                    
                     var list = new List<(byte cmd, byte[] data)>();
-                    
                     decoder.ParseBytes(result.Buffer, list);
 
-                   
-                    
-                    foreach (var frame in list)
+                    foreach (var (cmd, data) in list)
                     {
-                       
-                        
-                        if (frame.cmd == 0x01) // 发现请求命令
-                        {
-                            // 交由子类决定回复内容
-                            byte[] replyData = OnDiscoveryRequest(result.RemoteEndPoint);
-                            if (replyData != null && replyData.Length > 0)
-                            {
-                                await _udpServer.SendAsync(replyData, replyData.Length, result.RemoteEndPoint);
-                            }
-                        }
+                        RemoteEndPoint = result.RemoteEndPoint;
+                        PrepareReader(cmd, data);
+                        PrepareWriter();
+                        await OnDataReceived();
                     }
                 }
             }
-            catch (ObjectDisposedException)
-            {
-                /* 正常关闭 */
-            }
-            catch (Exception ex)
-            {
-                OnListenError(ex);
-            }
+            catch (ObjectDisposedException) { }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { OnListenError(ex); }
+        }
+
+        private void PrepareReader(byte cmd, byte[] data)
+        {
+            if (_reader is PacketReader pr)
+                pr.Reset(cmd, data);
+            else
+                Reader = new PacketReader(cmd, data);
+        }
+
+        private void PrepareWriter()
+        {
+            if (_writer is PacketWriter pw)
+                pw.Reset();
+            else
+                Writer = new PacketWriter();
         }
 
         /// <summary>
-        /// 当收到发现请求时调用，子类需返回要回复的字节数据（需遵循 PacketCodec 格式）
-        /// 例如：return PacketCodec.Encode(0x02, Encoding.UTF8.GetBytes("192.168.1.100"));
+        /// 收到帧时调用。通过 <see cref="Reader"/> / <see cref="Writer"/> / <see cref="RemoteEndPoint"/> 访问数据。
         /// </summary>
+        protected virtual async Task OnDataReceived()
+        {
+            if (Reader.Cmd == (byte)DiscoveryOpcode.DiscoveryRequest)
+            {
+                byte[] reply = OnDiscoveryRequest(RemoteEndPoint);
+                if (reply != null && reply.Length > 0)
+                    await ReplyAsync(reply, RemoteEndPoint);
+            }
+        }
+
         protected abstract byte[] OnDiscoveryRequest(IPEndPoint clientEndpoint);
 
-        /// <summary>
-        /// 监听出错时调用（可重写）
-        /// </summary>
-        protected virtual void OnListenError(Exception ex)
+        protected async Task ReplyAsync(byte[] data, IPEndPoint target)
         {
+            if (_udpServer != null && data != null && data.Length > 0)
+                await _udpServer.SendAsync(data, data.Length, target);
         }
 
-        /// <summary>
-        /// 监听成功启动时调用（可重写以记录日志）
-        /// </summary>
-        protected virtual void OnListenStarted(int port)
-        {
-        }
+        protected virtual void OnListenStarted(int port) { }
+        protected virtual void OnRawDataReceived(IPEndPoint remote, int byteCount) { }
+        protected virtual void OnListenError(Exception ex) { }
 
-        /// <summary>
-        /// 收到任何 UDP 数据时立即调用（可重写以诊断网络连通性）。
-        /// 如果此方法被调用说明网络通畅，问题在解码或命令码匹配。
-        /// </summary>
-        protected virtual void OnRawDataReceived(IPEndPoint remote, int byteCount)
-        {
-        }
-
-        public void Dispose()
-        {
-            Stop();
-        }
+        public void Dispose() => Stop();
     }
 }

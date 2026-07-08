@@ -1,36 +1,40 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Net;
-using System.Text;
 using LANServiceDiscovery.Runtime;
 
 namespace LANServiceDiscovery.Sample
 {
-    /// <summary>
-    /// 服务端示例：继承 UdpDiscoveryHostBase，回复本机 IP
-    /// </summary>
     public class ExampleHost : UdpDiscoveryHostBase
     {
-        [Header("UDP 监听端口")] public int listenPort = 8888;
+        [Header("UDP 监听端口")]
+        public int listenPort = 8888;
 
-        public ExampleHost() : base(8888)
-        {
-        }
+        public ExampleHost() : base(8888) { }
 
-       public void Start()
-        {
-            StartSync();
-        }
+        public void Start() => StartSync();
 
-        /// <summary>
-        /// 收到发现请求时，回复本机局域网 IPv4 地址
-        /// </summary>
         protected override byte[] OnDiscoveryRequest(IPEndPoint clientEndpoint)
         {
             string localIP = GetLocalIPAddress();
             Debug.Log($"收到来自 {clientEndpoint} 的发现请求，回复 IP: {localIP}");
-            // 回复命令码 0x02，数据为 IP 字符串
-            return PacketCodec.Encode(0x02, Encoding.UTF8.GetBytes(localIP));
+
+            return Writer
+                .WriteString(localIP)
+                .Encode(DiscoveryOpcode.DiscoveryReply);
         }
+
+        // 扩展示例：处理自定义命令码
+        // protected override async Task OnDataReceived()
+        // {
+        //     if (Reader.Cmd == (byte)MyOpcode.CustomRequest)
+        //     {
+        //         string name = Reader.ReadString();
+        //         var reply = Writer.WriteString("ok").Encode(MyOpcode.CustomReply);
+        //         await ReplyAsync(reply, RemoteEndPoint);
+        //         return;
+        //     }
+        //     await base.OnDataReceived();
+        // }
 
         protected override void OnListenStarted(int port)
         {
@@ -39,9 +43,12 @@ namespace LANServiceDiscovery.Sample
 
         protected override void OnRawDataReceived(IPEndPoint remote, int byteCount)
         {
-            Debug.Log($"收到原始 UDP 数据: {remote} → {byteCount} 字节");
-            
-            
+            Debug.Log($"收到原始 UDP: {remote} → {byteCount} 字节");
+        }
+
+        protected override void OnListenError(System.Exception ex)
+        {
+            Debug.LogError($"UDP 监听异常: {ex.Message}");
         }
 
         private string GetLocalIPAddress()
@@ -51,18 +58,9 @@ namespace LANServiceDiscovery.Sample
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                     return ip.ToString();
             }
-
             return "127.0.0.1";
         }
 
-        protected override void OnListenError(System.Exception ex)
-        {
-            Debug.LogError($"UDP 监听异常: {ex.Message}");
-        }
-
-        public void Destroy()
-        {
-            Stop();
-        }
+        public void Destroy() => Stop();
     }
 }
