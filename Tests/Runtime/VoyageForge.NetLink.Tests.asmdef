@@ -1,0 +1,17 @@
+{
+    "name": "VoyageForge.NetLink.Tests",
+    "rootNamespace": "VoyageForge.NetLink.Tests",
+    "references": [
+        "VoyageForge.NetLink.Runtime"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
