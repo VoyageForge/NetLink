@@ -2,7 +2,7 @@
 using VoyageForge.NetLink.Runtime;
 using Newtonsoft.Json;
 
-namespace VoyageForge.NetLink.Runtime
+namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
     /// <summary>通用 JSON 负载基类。子类无需重写 Serialize/Deserialize。</summary>
     public abstract class JsonPayload : Payload
