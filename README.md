@@ -1,118 +1,125 @@
-# 双字节起止符 UDP 发现框架
+# LANServiceDiscovery
 
-## 概述
-本框架提供了一套基于 **双字节起止符（SOF=0xAA55, EOF=~SOF=0x55AA）** 的二进制协议，用于局域网内的服务发现。  
-它包括：
-- **PacketCodec**：编解码器，自动处理粘包/拆包/脏数据。
-- **UdpDiscoveryClientBase**：客户端抽象基类，负责广播发现请求，并回调发现结果。
-- **UdpDiscoveryHostBase**：服务端抽象基类，负责监听请求并回调回复逻辑。
+基于可替换协议的 UDP 局域网服务发现框架。
 
-## 设计特点
-- **双字节起止符**：大幅降低误判概率（1/65536）。
-- **滑动窗口解析**：高效、抗干扰，自动跳过无效数据。
-- **抽象回调设计**：解耦网络层与业务逻辑，您只需继承基类并实现抽象方法。
-- **跨平台**：纯 C#，支持 Unity 2020+ 及 .NET Standard 2.0。
+## 架构
+
+```
+Codec                    ← 消息编解码器（收发 + 回调分发）
+├── FrameCodec           ← IFrameCodec / DefaultFrameCodec（帧层：SOF/Len/EOF）
+└── BodyCodec            ← IBodyCodec / DefaultBodyCodec（帧体层：TypeId/Payload/Check）
+
+Protocol<T>              ← 泛型消息体 { TypeId, Data:T }
+Payload                  ← 负载基类（Cmd + Serialize/Deserialize 配对）
+DiscoveryRequest/Reply   ← 内置发现负载
+```
+
+## 帧格式
+
+```
+SOF(2) + Len(2) + Body(Len) + EOF(2)
+Body = [TypeIdLen(2)] [TypeId(N)] [Payload(M)] [Check(1)]
+```
+
+- SOF: `0xAA 0x55`，EOF: `0x55 0xAA`
+- Len: 2 字节大端，Body 长度
+- TypeId: 2 字节大端长度前缀 + UTF-8 字符串
+- Payload: 负载数据
+- Check: 1 字节异或校验（TypeIdLen → Payload 末）
 
 ## 快速开始
 
-### 1. 服务端（Host）
-创建一个脚本继承 `UdpDiscoveryHostBase`，实现 `OnDiscoveryRequest` 方法，回复本机 IP：
+### 服务端
 
 ```csharp
 public class MyHost : UdpDiscoveryHostBase
 {
-    public MyHost(int port) : base(port) { }
-    protected override byte[] OnDiscoveryRequest(IPEndPoint client)
+    public MyHost() : base(8888) { }
+
+    public void Start()
     {
-        string ip = GetLocalIP();
-        return PacketCodec.Encode(DiscoveryOpcode.DiscoveryReply, Encoding.UTF8.GetBytes(ip));
+        Codec.On<DiscoveryRequest>(async msg =>
+        {
+            byte[] frame = Codec.Encode(new DiscoveryReply("192.168.1.1"));
+            await ReplyAsync(frame, RemoteEndPoint);
+        });
+        StartSync();
     }
 }
 ```
 
-然后在 `Start` 中调用 `Start()` 开始监听。
-
-### 2. 客户端（Client）
-创建一个脚本继承 `UdpDiscoveryClientBase`，实现 `OnHostDiscovered` 方法，决定如何处理发现的 IP：
+### 客户端
 
 ```csharp
 public class MyClient : UdpDiscoveryClientBase
 {
-    public MyClient(int port) : base(port) { }
-    protected override void OnHostDiscovered(string ip)
+    public MyClient() : base(8888) { }
+
+    public async Task Discover()
     {
-        // 例如：建立 TCP 连接
-        ConnectToHost(ip);
+        Codec.On<DiscoveryReply>(msg =>
+        {
+            foreach (var ip in msg.Data.Ips)
+                Debug.Log($"发现: {ip}");
+        });
+
+        Start();
+        while (true)
+        {
+            await SendAsync(new DiscoveryRequest());
+            await Task.Delay(2000);
+        }
     }
 }
 ```
 
-调用 `await StartDiscoveryAsync()` 开始发现。
-
-### 3. 协议格式
-| 字段 | 长度 | 说明 |
-|------|------|------|
-| SOF  | 2    | 0xAA 0x55 |
-| Len  | 2    | 包体长度（大端），含命令码 + 数据 |
-| Cmd  | 1    | 命令码，参见 `DiscoveryOpcode` 枚举 |
-| Data | N    | 负载数据（如 IP 字符串） |
-| Check| 1    | 异或校验（从 Cmd 到 Data） |
-| EOF  | 2    | 0x55 0xAA |
-
-### 4. 内置操作码（`DiscoveryOpcode` 枚举）
-
-| 枚举值 | 值 | 说明 |
-|--------|-----|------|
-| `DiscoveryRequest` | 0x01 | 客户端广播的发现请求 |
-| `DiscoveryReply` | 0x02 | 服务端回复的 IP 地址 |
-
-### 5. 扩展自定义操作码
-
-C# 枚举不支持继承，框架通过以下两种方式支持操作码扩展：
-
-**方式一：定义自己的枚举 + 使用 `byte` 重载**
+## 自定义负载
 
 ```csharp
-public enum MyOpcode : byte
+public class ChatMessage : Payload
 {
-    DeviceInfoRequest = 0x10,
-    DeviceInfoReply   = 0x11,
+    public string Name;
+    public string Text;
+
+    public ChatMessage() => Cmd = 0x10;
+
+    public override byte[] Serialize() =>
+        Encoding.UTF8.GetBytes(
+            JsonConvert.SerializeObject(new { Name, Text }));
+
+    public override void Deserialize(byte[] data)
+    {
+        var obj = JsonConvert.DeserializeAnonymousType(
+            Encoding.UTF8.GetString(data), new { Name = "", Text = "" });
+        Name = obj.Name; Text = obj.Text;
+    }
 }
 
-// 编码时使用 byte 重载
-PacketCodec.Encode((byte)MyOpcode.DeviceInfoRequest, payload);
+// 注册
+Codec.On<ChatMessage>(msg => Debug.Log($"{msg.Data.Name}: {msg.Data.Text}"));
+
+// 发送
+await SendAsync(new ChatMessage { Name = "Me", Text = "Hello" });
 ```
 
-**方式二：重写基类虚方法以识别新操作码**
-
-在 `UdpDiscoveryHostBase` 子类中：
+## 替换协议组件
 
 ```csharp
-protected override bool IsDiscoveryRequest(byte cmd) =>
-    base.IsDiscoveryRequest(cmd) || cmd == (byte)MyOpcode.DeviceInfoRequest;
+// 替换帧层（自定义帧尾 Tag）
+Codec.FrameCodec = new MyFrameCodec();
+
+// 替换帧体层（加密）
+Codec.BodyCodec = new MyEncryptedBodyCodec();
 ```
 
-在 `UdpDiscoveryClientBase` 子类中：
+## Windows 防火墙
 
-```csharp
-protected override bool IsDiscoveryReply(byte cmd) =>
-    base.IsDiscoveryReply(cmd) || cmd == (byte)MyOpcode.DeviceInfoReply;
+首次运行时 UDP 入站可能被拦：
+
+```powershell
+New-NetFirewallRule -DisplayName "Unity UDP 8888" -Direction Inbound -Protocol UDP -LocalPort 8888 -Action Allow
 ```
-
-### 6. 注意事项
-- **Windows 防火墙**：首次运行时防火墙可能拦截 UDP 入站包。若 Wireshark 能抓到包但应用收不到，以管理员身份执行：
-  ```powershell
-  New-NetFirewallRule -DisplayName "Unity UDP 8888" -Direction Inbound -Protocol UDP -LocalPort 8888 -Action Allow
-  ```
-  或临时关闭防火墙验证，确认后重新开启并添加规则。
-- 确保防火墙允许 UDP 广播和 TCP 连接端口。
-- 在 Unity 中，回调方法可能不在主线程执行，如需操作 GameObject 请使用 `UnityMainThreadDispatcher` 或 `SynchronizationContext`。
-- 超时和重试机制可在子类中自定义实现。
-
-## 扩展建议
-- 可通过重写 `OnDiscoveryTimeout` 实现重试逻辑。
-- 可修改 `PacketCodec.Encode` 以支持加密或压缩。
-- 可扩展命令码以支持更多交互（如设备信息交换）。
 
 ## 许可证
+
 MIT
