@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Runtime
 {
     /// <summary>
     /// 默认帧层编解码器：SOF(0xAA55) + Len(2) + FrameBody + Tail(0x55AA)。

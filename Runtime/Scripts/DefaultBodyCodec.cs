@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Runtime
 {
     /// <summary>
     /// 默认帧体编解码器。格式：[TypeIdLen(2)][TypeId(N)][Payload(M)][Check(1)]

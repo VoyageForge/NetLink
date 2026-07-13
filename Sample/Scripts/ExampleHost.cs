@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using System.Net;
-using LANServiceDiscovery.Runtime;
+using VoyageForge.NetLink.Runtime;
 
-namespace LANServiceDiscovery.Sample
+namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
     /// <summary>服务端示例：注册 DiscoveryRequest 处理器，回复本机 IP 列表</summary>
     public class ExampleHost : UdpDiscoveryHostBase

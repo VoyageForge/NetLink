@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Threading.Tasks;
-using LANServiceDiscovery.Runtime;
+using VoyageForge.NetLink.Runtime;
 
-namespace LANServiceDiscovery.Sample
+namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
     /// <summary>客户端示例：注册 DiscoveryReply 处理器，定时发送发现请求</summary>
     public class ExampleClient : UdpDiscoveryClientBase

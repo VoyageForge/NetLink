@@ -3,8 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using VoyageForge.NetLink.Runtime;
 
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
     /// <summary>
     /// UDP 服务端基类。后台监听 → <see cref="Codec"/>.Feed/Dispatch 自动分发。

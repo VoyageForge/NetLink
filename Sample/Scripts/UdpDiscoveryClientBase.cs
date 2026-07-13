@@ -3,8 +3,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using VoyageForge.NetLink.Runtime;
+using UnityEngine;
 
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
     /// <summary>
     /// UDP 客户端基类。后台接收 → <see cref="Codec"/>.Feed/Dispatch 自动分发。
@@ -45,6 +47,9 @@ namespace LANServiceDiscovery.Runtime
         {
             if (_udpClient == null) return;
             byte[] frame = Codec.Encode(packet);
+
+            Debug.Log(BitConverter.ToString(frame));
+            
             await _udpClient.SendAsync(frame, frame.Length, new IPEndPoint(IPAddress.Broadcast, _broadcastPort));
         }
 

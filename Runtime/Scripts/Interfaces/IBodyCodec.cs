@@ -1,4 +1,4 @@
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Runtime
 {
     /// <summary>帧体层编解码器：帧体 ↔ (TypeId, Payload)</summary>
     public interface IBodyCodec

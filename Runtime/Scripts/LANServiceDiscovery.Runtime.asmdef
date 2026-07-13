@@ -1,6 +1,6 @@
 {
-    "name": "LANServiceDiscovery.Runtime",
-    "rootNamespace": "LANServiceDiscovery.Runtime",
+    "name": "VoyageForge.NetLink.Runtime",
+    "rootNamespace": "VoyageForge.NetLink.Runtime",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

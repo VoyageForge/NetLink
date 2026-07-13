@@ -1,7 +1,7 @@
-using LANServiceDiscovery.Runtime;
+using VoyageForge.NetLink.Runtime;
 using UnityEngine;
 
-namespace LANServiceDiscovery.Sample
+namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
     public class Client : MonoBehaviour
     {

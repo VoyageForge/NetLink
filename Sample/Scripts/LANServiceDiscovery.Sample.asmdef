@@ -1,5 +1,5 @@
 {
-    "name": "LANServiceDiscovery.Sample",
+    "name": "VoyageForge.NetLink.Samples.LANDiscovery",
     "rootNamespace": "",
     "references": [
         "GUID:38cbf4a1040ca5c4ea2fda36bdf7b54f"

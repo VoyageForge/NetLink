@@ -1,4 +1,4 @@
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Runtime
 {
     /// <summary>帧层编解码器：原始字节 ↔ 帧体（剥离/包裹 SOF/Len/EOF）</summary>
     public interface IFrameCodec

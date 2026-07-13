@@ -1,4 +1,4 @@
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Runtime
 {
     /// <summary>内置操作码枚举（与 <see cref="DiscoveryRequest"/> / <see cref="DiscoveryReply"/> 配套）</summary>
     public enum DiscoveryOpcode : byte

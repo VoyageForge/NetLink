@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace LANServiceDiscovery.Runtime
+namespace VoyageForge.NetLink.Runtime
 {
     /// <summary>
     /// 消息编解码器 —— 组合帧层编解码和帧体层编解码，提供消息收发和回调分发。
