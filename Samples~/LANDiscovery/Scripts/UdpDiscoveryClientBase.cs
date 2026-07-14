@@ -47,9 +47,6 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         {
             if (_udpClient == null) return;
             byte[] frame = Codec.Encode(packet);
-
-            Debug.Log(BitConverter.ToString(frame));
-            
             await _udpClient.SendAsync(frame, frame.Length, new IPEndPoint(IPAddress.Broadcast, _broadcastPort));
         }
 

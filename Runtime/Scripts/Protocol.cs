@@ -11,7 +11,7 @@ namespace VoyageForge.NetLink.Runtime
     }
 
     /// <summary>收到的消息：Payload + 发送方地址</summary>
-    public readonly struct ReceivedMessage<T> where T : Payload
+    public  class ReceivedMessage<T> where T : Payload
     {
         /// <summary>负载数据</summary>
         public T Data { get; }
