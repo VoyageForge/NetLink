@@ -20,7 +20,7 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         private readonly int _broadcastPort;
 
         /// <summary>消息编解码器（收发 + 回调分发）</summary>
-        protected Codec Codec { get; set; } = new Codec();
+        public Codec Codec { get; protected set; } = new Codec();
         /// <summary>最近收到包的发送方地址</summary>
         protected IPEndPoint RemoteEndPoint { get; private set; }
 

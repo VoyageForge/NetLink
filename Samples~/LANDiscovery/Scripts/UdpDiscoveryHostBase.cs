@@ -19,11 +19,15 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         private readonly int _listenPort;
 
         /// <summary>消息编解码器（收发 + 回调分发）</summary>
-        protected Codec Codec { get; set; } = new Codec();
+        public Codec Codec { get; protected set; } = new Codec();
+
         /// <summary>最近收到包的发送方地址</summary>
         private IPEndPoint _remoteEndPoint;
 
-        protected UdpDiscoveryHostBase(int listenPort) { _listenPort = listenPort; }
+        protected UdpDiscoveryHostBase(int listenPort)
+        {
+            _listenPort = listenPort;
+        }
 
         /// <summary>启动监听（非阻塞，设置端口复用）</summary>
         protected void StartSync()
@@ -38,7 +42,12 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         }
 
         /// <summary>停止监听</summary>
-        protected void Stop() { _cts?.Cancel(); _udpServer?.Close(); _listenTask?.Wait(1000); }
+        protected void Stop()
+        {
+            _cts?.Cancel();
+            _udpServer?.Close();
+            _listenTask?.Wait(1000);
+        }
 
         private async Task ListenLoop(CancellationToken token)
         {
@@ -53,9 +62,16 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
                     Codec.Dispatch(result.RemoteEndPoint);
                 }
             }
-            catch (ObjectDisposedException) { }
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { OnListenError(ex); }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                OnListenError(ex);
+            }
         }
 
         /// <summary>发送帧到指定地址</summary>
@@ -66,9 +82,15 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         }
 
         /// <summary>监听已启动</summary>
-        protected virtual void OnListenStarted(int port) { }
+        protected virtual void OnListenStarted(int port)
+        {
+        }
+
         /// <summary>监听异常</summary>
-        protected virtual void OnListenError(Exception ex) { }
+        protected virtual void OnListenError(Exception ex)
+        {
+        }
+
         public void Dispose() => Stop();
     }
 }
