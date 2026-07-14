@@ -2,13 +2,15 @@
     "name": "VoyageForge.NetLink.Samples.LANDiscovery",
     "rootNamespace": "",
     "references": [
-        "GUID:e9304b0aa79e5344b9cdd7f52c953db4"
+        "VoyageForge.NetLink.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],

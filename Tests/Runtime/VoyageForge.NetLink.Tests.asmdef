@@ -2,16 +2,21 @@
     "name": "VoyageForge.NetLink.Tests",
     "rootNamespace": "VoyageForge.NetLink.Tests",
     "references": [
-        "GUID:e9304b0aa79e5344b9cdd7f52c953db4"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+        "VoyageForge.NetLink.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": []
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
