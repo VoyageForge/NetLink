@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using System.Net;
 using VoyageForge.NetLink.Runtime;
 
 namespace VoyageForge.NetLink.Samples.LANDiscovery
 {
-    /// <summary>服务端示例：注册 DiscoveryRequest 处理器，回复本机 IP 列表</summary>
+    /// <summary>服务端示例：收到 DiscoveryRequest 后回复空 DiscoveryReply</summary>
     public class ExampleHost : UdpDiscoveryHostBase
     {
         [Header("UDP 监听端口")] public int listenPort = 8888;
@@ -17,10 +14,9 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         {
             Codec.On<DiscoveryRequest>(async msg =>
             {
-                var ips = GetLocalIPAddress();
-                Debug.Log($"收到发现请求，回复 {ips.Count} 个 IP");
+                Debug.Log($"收到来自 {RemoteEndPoint.Address} 的发现请求");
 
-                byte[] frame = Codec.Encode(new DiscoveryReply(ips.ToArray()));
+                byte[] frame = Codec.Encode(new DiscoveryReply());
                 await ReplyAsync(frame, RemoteEndPoint);
             });
 
@@ -32,13 +28,6 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
 
         protected override void OnListenError(System.Exception ex)
             => Debug.LogError($"异常: {ex.Message}");
-
-        private List<string> GetLocalIPAddress()
-        {
-            return (from ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                    where ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
-                    select ip.ToString()).ToList();
-        }
 
         public void Destroy() => Stop();
     }

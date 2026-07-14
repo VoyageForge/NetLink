@@ -13,17 +13,13 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         public override void Deserialize(byte[] data) { }
     }
 
-    /// <summary>发现回复（JSON 序列化）</summary>
-    public class DiscoveryReply : JsonPayload
+    /// <summary>发现回复（空负载，接收端从 RemoteEndPoint 取 IP）</summary>
+    public class DiscoveryReply : Payload
     {
-        public string[] Ips;
-
         public DiscoveryReply() => Cmd = (byte)DiscoveryOpcode.DiscoveryReply;
 
-        public DiscoveryReply(params string[] ips)
-        {
-            Cmd = (byte)DiscoveryOpcode.DiscoveryReply;
-            Ips = ips;
-        }
+        public override byte[] Serialize() => Array.Empty<byte>();
+
+        public override void Deserialize(byte[] data) { }
     }
 }

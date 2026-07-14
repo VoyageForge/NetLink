@@ -25,8 +25,7 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
             Codec.On<DiscoveryReply>(msg =>
             {
                 _discovered = true;
-                foreach (var ip in msg.Data.Ips)
-                    Debug.Log($"<color=green>发现: {ip}</color>");
+                Debug.Log($"<color=green>发现服务端: {RemoteEndPoint.Address}</color>");
             });
 
             Start();
