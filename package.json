@@ -11,7 +11,7 @@
     {
       "displayName": "LAN Discovery",
       "description": "基于 NetLink 的 UDP 局域网服务发现示例",
-      "path": "Samples~/LANDiscovery"
+      "path": "Samples/LANDiscovery"
     }
   ]
 }
