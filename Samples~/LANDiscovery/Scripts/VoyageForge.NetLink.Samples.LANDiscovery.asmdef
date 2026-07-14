@@ -2,7 +2,7 @@
     "name": "VoyageForge.NetLink.Samples.LANDiscovery",
     "rootNamespace": "",
     "references": [
-        "GUID:38cbf4a1040ca5c4ea2fda36bdf7b54f"
+        "GUID:e9304b0aa79e5344b9cdd7f52c953db4"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

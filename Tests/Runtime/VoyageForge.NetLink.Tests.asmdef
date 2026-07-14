@@ -2,7 +2,7 @@
     "name": "VoyageForge.NetLink.Tests",
     "rootNamespace": "VoyageForge.NetLink.Tests",
     "references": [
-        "VoyageForge.NetLink.Runtime"
+        "GUID:e9304b0aa79e5344b9cdd7f52c953db4"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
