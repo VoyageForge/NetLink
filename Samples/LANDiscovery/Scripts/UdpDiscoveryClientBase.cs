@@ -63,7 +63,7 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
                     RemoteEndPoint = result.RemoteEndPoint;
 
                     Codec.Feed(result.Buffer);
-                    Codec.Dispatch();
+                    Codec.Dispatch(result.RemoteEndPoint);
                 }
             }
             catch (ObjectDisposedException) { }

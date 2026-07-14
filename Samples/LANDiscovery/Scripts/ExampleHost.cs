@@ -14,10 +14,10 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         {
             Codec.On<DiscoveryRequest>(async msg =>
             {
-                Debug.Log($"收到来自 {RemoteEndPoint.Address} 的发现请求");
+                Debug.Log($"收到来自 {msg.Remote.Address} 的发现请求");
 
                 byte[] frame = Codec.Encode(new DiscoveryReply());
-                await ReplyAsync(frame, RemoteEndPoint);
+                await ReplyAsync(frame, msg.Remote);
             });
 
             StartSync();

@@ -25,7 +25,7 @@ namespace VoyageForge.NetLink.Tests
             byte[] frame = _codec.Encode(packet);
 
             _codec.Feed(frame);
-            _codec.Dispatch();
+            _codec.Dispatch(null);
 
             Assert.IsTrue(received);
         }
@@ -52,7 +52,7 @@ namespace VoyageForge.NetLink.Tests
             frame2.CopyTo(glued, frame1.Length);
 
             _codec.Feed(glued);
-            _codec.Dispatch();
+            _codec.Dispatch(null);
 
             Assert.AreEqual(2, count);
         }
@@ -65,7 +65,7 @@ namespace VoyageForge.NetLink.Tests
 
             _codec.Feed(frame);
             // 未注册 handler，Dispatch 不会回调（内部丢弃）
-            _codec.Dispatch();
+            _codec.Dispatch(null);
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace VoyageForge.NetLink.Tests
             // 构造一个 TypeId 不匹配的帧
             byte[] frame = _codec.Encode("UnknownType", new byte[] { 1 });
             _codec.Feed(frame);
-            _codec.Dispatch();
+            _codec.Dispatch(null);
 
             Assert.IsFalse(called);
         }

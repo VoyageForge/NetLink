@@ -21,7 +21,7 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         /// <summary>消息编解码器（收发 + 回调分发）</summary>
         protected Codec Codec { get; set; } = new Codec();
         /// <summary>最近收到包的发送方地址</summary>
-        protected IPEndPoint RemoteEndPoint { get; private set; }
+        private IPEndPoint _remoteEndPoint;
 
         protected UdpDiscoveryHostBase(int listenPort) { _listenPort = listenPort; }
 
@@ -47,10 +47,10 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
                 while (!token.IsCancellationRequested)
                 {
                     var result = await _udpServer.ReceiveAsync();
-                    RemoteEndPoint = result.RemoteEndPoint;
+                    _remoteEndPoint = result.RemoteEndPoint;
 
                     Codec.Feed(result.Buffer);
-                    Codec.Dispatch();
+                    Codec.Dispatch(result.RemoteEndPoint);
                 }
             }
             catch (ObjectDisposedException) { }
