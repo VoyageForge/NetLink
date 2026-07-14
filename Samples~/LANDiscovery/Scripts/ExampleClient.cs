@@ -14,13 +14,8 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         private int _retryCount;
         private bool _discovered;
 
-        public ExampleClient() : base(8888) { }
-
-        public async Task StartDiscoveryAsync()
+        public ExampleClient() : base(8888)
         {
-            _discovered = false;
-            _retryCount = 0;
-
             // 注册处理器：收到 DiscoveryReply 时回调
             Codec.On<DiscoveryReply>(msg =>
             {
@@ -28,6 +23,14 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
                 Debug.Log($"<color=green>发现服务端: {msg.Remote.Address}</color>");
             });
 
+        }
+
+        public async Task StartDiscoveryAsync()
+        {
+            _discovered = false;
+            _retryCount = 0;
+
+           
             Start();
 
             while (!_discovered && (maxRetries == 0 || _retryCount < maxRetries))
