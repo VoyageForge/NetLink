@@ -1,4 +1,4 @@
-﻿name: Publish Depot
+﻿name: Publish NetLink
 
 on:
   workflow_dispatch:
@@ -54,7 +54,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add "${PACKAGE_JSON_PATH}"
-          git commit -m "chore(depot): set version to ${NEW_VER}" || echo "No changes to commit"
+          git commit -m "chore(NetLink): set version to ${NEW_VER}" || echo "No changes to commit"
           git push origin HEAD:main
 
       - name: Generate changelog
@@ -81,7 +81,7 @@ jobs:
           rm -f CHANGELOG_TEMP.md
 
           git add "${CHANGELOG_PATH}"
-          git commit -m "chore(depot): update changelog for v${NEW_VER}" || echo "No changes to commit"
+          git commit -m "chore(NetLink): update changelog for v${NEW_VER}" || echo "No changes to commit"
           git push origin HEAD:main
 
       - name: Create Git tag
@@ -95,7 +95,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.new_version }}
-          name: "Depot v${{ steps.version.outputs.new_version }}"
+          name: "NetLink v${{ steps.version.outputs.new_version }}"
           body: "Release v${{ steps.version.outputs.new_version }}"
           overwrite_files: true
         env:
