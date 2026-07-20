@@ -1,0 +1,116 @@
+﻿name: Publish Depot
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Version to release (optional, leave empty to auto patch increment)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_JSON_PATH: package.json
+      CHANGELOG_PATH: CHANGELOG.md
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install semver
+        run: npm install -g semver
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          INPUT_VER="${{ github.event.inputs.release_version }}"
+          if [ -n "$INPUT_VER" ]; then
+            NEW_VER="$INPUT_VER"
+          else
+            CURRENT_VER=$(node -p "require('./${PACKAGE_JSON_PATH}').version")
+            NEW_VER=$(npx semver "$CURRENT_VER" -i patch)
+          fi
+          echo "Determined version: $NEW_VER"
+          echo "new_version=$NEW_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Update package version
+        shell: bash
+        run: |
+          NEW_VER="${{ steps.version.outputs.new_version }}"
+          echo "Setting ${PACKAGE_JSON_PATH} version to $NEW_VER"
+          node -e "let fs=require('fs'); let p=require('./${PACKAGE_JSON_PATH}'); p.version='${NEW_VER}'; fs.writeFileSync('${PACKAGE_JSON_PATH}', JSON.stringify(p, null, 2) + '\n');"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add "${PACKAGE_JSON_PATH}"
+          git commit -m "chore(depot): set version to ${NEW_VER}" || echo "No changes to commit"
+          git push origin HEAD:main
+
+      - name: Generate changelog
+        shell: bash
+        run: |
+          NEW_VER="${{ steps.version.outputs.new_version }}"
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$LAST_TAG" ]; then
+            git log "$LAST_TAG"..HEAD --pretty=format:"- %s" > CHANGELOG_TEMP.md
+          else
+            echo "- Initial release" > CHANGELOG_TEMP.md
+          fi
+
+          {
+            echo "## v${NEW_VER}"
+            cat CHANGELOG_TEMP.md
+            if [ -f "${CHANGELOG_PATH}" ]; then
+              cat "${CHANGELOG_PATH}"
+            fi
+          } > TEMP_CHANGELOG.md
+
+          mv TEMP_CHANGELOG.md "${CHANGELOG_PATH}"
+          rm -f CHANGELOG_TEMP.md
+
+          git add "${CHANGELOG_PATH}"
+          git commit -m "chore(depot): update changelog for v${NEW_VER}" || echo "No changes to commit"
+          git push origin HEAD:main
+
+      - name: Create Git tag
+        shell: bash
+        run: |
+          NEW_VER="${{ steps.version.outputs.new_version }}"
+          git tag -f "v${NEW_VER}"
+          git push origin "v${NEW_VER}" --force
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.new_version }}
+          name: "Depot v${{ steps.version.outputs.new_version }}"
+          body: "Release v${{ steps.version.outputs.new_version }}"
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify version
+        shell: bash
+        run: |
+          PKG_VER=$(node -p "require('./${PACKAGE_JSON_PATH}').version")
+          TAG_VER="${{ steps.version.outputs.new_version }}"
+          if [ "$PKG_VER" != "$TAG_VER" ]; then
+            echo "Version mismatch!"
+            exit 1
+          fi
+          echo "Version successfully synced with tag."
+
+      - name: Done
+        run: echo "Publish pipeline completed successfully. OpenUPM will automatically build the new version once the tag is pushed."
