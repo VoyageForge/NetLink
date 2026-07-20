@@ -4,6 +4,11 @@
   "displayName": "NetLink",
   "description": "可替换协议的二进制消息编解码框架。\n- 双字节起止符默认协议\n- 泛型 Payload + 回调注册\n- FrameCodec/BodyCodec 可替换组件",
   "unity": "2020.3",
+  "author": {
+    "name": "VoyageForge",
+    "url": "https://github.com/VoyageForge/NetLink"
+  },
+  "license": "MIT",
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.2"
   },
