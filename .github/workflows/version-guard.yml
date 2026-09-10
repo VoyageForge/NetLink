@@ -1,0 +1,50 @@
+name: Version Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard against version rollback
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            # PR: compare head version vs base (main) version
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+            OLD_VER=$(git show "${BASE_SHA}:package.json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+            NEW_VER=$(git show "${HEAD_SHA}:package.json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+
+            echo "Base  (main) version: $OLD_VER"
+            echo "PR    (head) version: $NEW_VER"
+          else
+            # Push: compare before vs after
+            BEFORE_SHA="${{ github.event.before }}"
+            AFTER_SHA="${{ github.event.after }}"
+
+            OLD_VER=$(git show "${BEFORE_SHA}:package.json" 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version" || echo "0.0.0")
+            NEW_VER=$(git show "${AFTER_SHA}:package.json" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+
+            echo "Before version: $OLD_VER"
+            echo "After  version: $NEW_VER"
+          fi
+
+          # Compare: fail if new version is lower than old version
+          HIGHER=$(printf '%s\n' "$OLD_VER" "$NEW_VER" | sort -V | tail -n1)
+          if [ "$NEW_VER" != "$HIGHER" ]; then
+            echo "::error::Version rollback detected! main has $OLD_VER but incoming has $NEW_VER"
+            exit 1
+          fi
+
+          echo "Version check passed: $OLD_VER -> $NEW_VER"
