@@ -1,5 +1,6 @@
 using UnityEngine;
 using VoyageForge.NetLink.Runtime;
+using VoyageForge.NetLink.Discovery;
 
 namespace VoyageForge.NetLink.Samples.LANDiscovery
 {

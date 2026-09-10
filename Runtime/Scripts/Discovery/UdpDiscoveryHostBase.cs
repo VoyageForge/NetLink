@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using VoyageForge.NetLink.Runtime;
 
-namespace VoyageForge.NetLink.Samples.LANDiscovery
+namespace VoyageForge.NetLink.Discovery
 {
     /// <summary>
     /// UDP 服务端基类。后台监听 → <see cref="Codec"/>.Feed/Dispatch 自动分发。

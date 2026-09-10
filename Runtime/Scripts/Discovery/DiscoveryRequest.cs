@@ -1,7 +1,7 @@
 using System;
 using VoyageForge.NetLink.Runtime;
 
-namespace VoyageForge.NetLink.Samples.LANDiscovery
+namespace VoyageForge.NetLink.Discovery
 {
     /// <summary>发现请求（空负载，无序列化数据）</summary>
     public class DiscoveryRequest : Payload
