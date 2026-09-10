@@ -77,7 +77,7 @@ namespace VoyageForge.NetLink.Tests
         [UnityTest]
         public IEnumerator ScanHostsAsync_发现本机回环设备()
         {
-            const int port = 45678;
+            const int port = 8888;
 
             var host = new TestHost(port);
             host.Codec.On<DiscoveryRequest>(async msg =>
@@ -129,7 +129,7 @@ namespace VoyageForge.NetLink.Tests
         [UnityTest]
         public IEnumerator DiscoverWithFallbackAsync_广播未发现_退化为遍历并发现设备()
         {
-            const int port = 45679;
+            const int port = 8888;
 
             var host = new TestHost(port);
             host.Codec.On<DiscoveryRequest>(async msg =>
@@ -180,7 +180,7 @@ namespace VoyageForge.NetLink.Tests
         [UnityTest]
         public IEnumerator ScanHostsAsync_并发遍历多主机_仍能发现设备()
         {
-            const int port = 45680;
+            const int port = 8888;
 
             var host = new TestHost(port);
             host.Codec.On<DiscoveryRequest>(async msg =>
