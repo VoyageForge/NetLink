@@ -51,9 +51,10 @@ namespace VoyageForge.NetLink.Discovery
 
         private async Task ListenLoop(CancellationToken token)
         {
-            try
+            // 注意：try/catch 放在 while 内层，单个包的接收异常不会终止整个监听循环。
+            while (!token.IsCancellationRequested)
             {
-                while (!token.IsCancellationRequested)
+                try
                 {
                     var result = await _udpServer.ReceiveAsync();
                     _remoteEndPoint = result.RemoteEndPoint;
@@ -61,16 +62,18 @@ namespace VoyageForge.NetLink.Discovery
                     Codec.Feed(result.Buffer);
                     Codec.Dispatch(result.RemoteEndPoint);
                 }
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                OnListenError(ex);
+                catch (ObjectDisposedException) { break; }   // Stop() 关闭 socket 触发的正常退出
+                catch (OperationCanceledException) { break; } // 取消令牌触发的正常退出
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    // 向已关闭的客户端回复时，对方回 ICMP Port Unreachable（映射为 ConnectionReset）。
+                    // 属正常副作用，静默忽略后继续监听。
+                }
+                catch (Exception ex)
+                {
+                    // 其他异常：上报后继续监听，避免一次坏包/异常终止整个监听循环
+                    OnListenError(ex);
+                }
             }
         }
 

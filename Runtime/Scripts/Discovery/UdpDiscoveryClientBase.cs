@@ -367,9 +367,10 @@ namespace VoyageForge.NetLink.Discovery
 
         private async Task ReceiveLoop(CancellationToken token)
         {
-            try
+            // 注意：try/catch 放在 while 内层，单个包的接收异常不会终止整个发现循环。
+            while (!token.IsCancellationRequested)
             {
-                while (!token.IsCancellationRequested)
+                try
                 {
                     var result = await _udpClient.ReceiveAsync();
                     RemoteEndPoint = result.RemoteEndPoint;
@@ -377,10 +378,20 @@ namespace VoyageForge.NetLink.Discovery
                     Codec.Feed(result.Buffer);          // 喂入原始字节（内部处理粘包 / 拆包）
                     Codec.Dispatch(result.RemoteEndPoint); // 提取完整帧并回调对应处理器
                 }
+                catch (ObjectDisposedException) { break; }   // Stop() 关闭 socket 触发的正常退出
+                catch (OperationCanceledException) { break; } // 取消令牌触发的正常退出
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    // 广播/遍历探测时，没有监听该端口的主机会回 ICMP Port Unreachable，
+                    // Windows 把它映射为 ConnectionReset。属正常副作用，忽略后继续接收。
+                    Debug.LogWarning($"[UDP发现] 忽略端口不可达(ConnectionReset): {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    // 其他异常：上报后继续接收，避免一次坏包/异常终止整个发现循环
+                    OnError(ex);
+                }
             }
-            catch (ObjectDisposedException) { }   // Stop() 关闭 socket 触发的正常退出
-            catch (OperationCanceledException) { }
-            catch (Exception ex) { OnError(ex); }
         }
 
         /// <summary>
