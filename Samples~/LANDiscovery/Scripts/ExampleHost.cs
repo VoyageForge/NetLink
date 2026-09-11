@@ -9,11 +9,14 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
     {
         [Header("UDP 监听端口")] public int listenPort = 8888;
 
+        /// <summary>发现请求订阅句柄，Destroy 时退订。</summary>
+        private System.IDisposable _subscription;
+
         public ExampleHost() : base(8888) { }
 
         public void Start()
         {
-            Codec.On<DiscoveryRequest>(async msg =>
+            _subscription = Codec.On<DiscoveryRequest>(async msg =>
             {
                 Debug.Log($"收到来自 {msg.Remote.Address} 的发现请求");
 
@@ -30,6 +33,11 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         protected override void OnListenError(System.Exception ex)
             => Debug.LogError($"异常: {ex.Message}");
 
-        public void Destroy() => Stop();
+        public void Destroy()
+        {
+            _subscription?.Dispose();
+            _subscription = null;
+            Stop();
+        }
     }
 }

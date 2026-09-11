@@ -14,10 +14,13 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
 
         private bool _discovered;
 
+        /// <summary>发现回复订阅句柄，Destroy 时退订。</summary>
+        private System.IDisposable _subscription;
+
         public ExampleClient() : base(8888)
         {
             // 注册处理器：收到 DiscoveryReply 时回调
-            Codec.On<DiscoveryReply>(msg =>
+            _subscription = Codec.On<DiscoveryReply>(msg =>
             {
                 _discovered = true;
                 Debug.Log($"<color=green>发现服务端: {msg.Remote.Address}</color>");
@@ -41,6 +44,12 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
 
         protected override void OnStarted() => Debug.Log("客户端已启动");
         protected override void OnError(System.Exception ex) => Debug.LogError($"异常: {ex.Message}");
-        public void Destroy() => Stop();
+
+        public void Destroy()
+        {
+            _subscription?.Dispose();
+            _subscription = null;
+            Stop();
+        }
     }
 }

@@ -112,13 +112,17 @@ namespace VoyageForge.NetLink.Discovery
             OnStarted();
         }
 
-        /// <summary>停止：取消接收循环并释放 socket。</summary>
+        /// <summary>
+        /// 停止：取消令牌并释放 socket。
+        /// <para>不做同步 Wait —— 后台接收线程会因 token 取消 + socket 关闭自行退出。
+        /// 若在此同步 Wait，会阻塞主线程，导致挂在主线程 SynchronizationContext 上的
+        /// 搜索循环（BroadcastUntilAsync 的 await continuation）无法及时处理取消、迟迟不退。</para>
+        /// </summary>
         public void Stop()
         {
             _cts?.Cancel();
             _udpClient?.Close();
             _udpClient = null;   // 置空使 SendAsync 立即短路，避免 socket 已关闭后继续发送抛异常
-            _receiveTask?.Wait(1000);
         }
 
         /// <summary>

@@ -41,12 +41,11 @@ namespace VoyageForge.NetLink.Discovery
             OnListenStarted(_listenPort);
         }
 
-        /// <summary>停止监听</summary>
+        /// <summary>停止监听（不同步 Wait，避免阻塞主线程）。</summary>
         protected void Stop()
         {
             _cts?.Cancel();
             _udpServer?.Close();
-            _listenTask?.Wait(1000);
         }
 
         private async Task ListenLoop(CancellationToken token)

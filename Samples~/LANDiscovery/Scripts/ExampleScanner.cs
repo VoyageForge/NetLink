@@ -33,10 +33,13 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
         /// <summary>收集到的设备（后台接收线程写入，需加锁）。</summary>
         private readonly List<IPEndPoint> _devices = new List<IPEndPoint>();
 
+        /// <summary>发现回复订阅句柄，Destroy 时退订。</summary>
+        private System.IDisposable _subscription;
+
         public ExampleScanner() : base(8888)
         {
             // 收到 DiscoveryReply 时记录来源地址（即服务端地址）
-            Codec.On<DiscoveryReply>(msg =>
+            _subscription = Codec.On<DiscoveryReply>(msg =>
             {
                 lock (_devices) _devices.Add(msg.Remote);
                 Debug.Log($"<color=green>发现设备: {msg.Remote.Address}</color>");
@@ -75,7 +78,12 @@ namespace VoyageForge.NetLink.Samples.LANDiscovery
             else Debug.LogWarning("未发现任何设备");
         }
 
-        /// <summary>停止。</summary>
-        public void Destroy() => Stop();
+        /// <summary>停止并退订。</summary>
+        public void Destroy()
+        {
+            _subscription?.Dispose();
+            _subscription = null;
+            Stop();
+        }
     }
 }
